@@ -17,8 +17,8 @@ int  setup_buff(char *, char *, int);
 //prototypes for functions to handle required functionality
 int  count_words(char *, int, int);
 //add additional prototypes here
-void reverse_string(char *, int);
-void word_print(char *, int);
+void reverse_string(char *, int, int);
+int word_print(char *, int, int);
 
 int setup_buff(char *buff, char *user_str, int len) {
     // fill the entire buffer with .
@@ -36,7 +36,7 @@ int setup_buff(char *buff, char *user_str, int len) {
     while (*user_str != NULL_TERMINATOR) {  // copy user_str into buff
         if (*user_str == SPACE || *user_str == TAB) {
             if (inSpace) { //it is whitespace
-                user_str++; // if already inserted a space, skip whitespace
+                user_str++; // if already inserted a space skip whitespace
                 continue;
             } else { // put only one space
                 if (out < end) {
@@ -54,28 +54,27 @@ int setup_buff(char *buff, char *user_str, int len) {
                 out++;
                 inputLen++;
             } else {
-                return -1; // lack of space in buff
+                return -1; // no space in left in buff
             }
             inSpace = false; // no longer in space
         }
         user_str++;
     }
-    if (inputLen > 0) { //if last char was a space, make it into a period
-        char *lastChar = out - 1;
-        if (*lastChar == SPACE) {
-            *lastChar = PERIOD;  // turn the space to a .
-            inputLen--;
-        }
+
+    char *lastChar = out - 1; // if last char was a space make it into a period
+    if (*lastChar == SPACE) {
+        *lastChar = PERIOD;  // turn the space to a .
+        inputLen--;
     }
     return inputLen;
 }
 
 void print_buff(char *buff, int len){
-    printf("Buffer:  ");
+    printf("Buffer:  [");
     for (int i=0; i<len; i++){
         putchar(*(buff+i));
     }
-    putchar('\n');
+    printf("]\n");
 }
 
 void usage(char *exename){
@@ -87,6 +86,14 @@ int count_words(char *buff, int len, int str_len){
     int wordCount = 0; // intialize 0 words
     bool wordStart = false; // the start of a word is intially false (i.e many spaces in the beginning)
 
+    if (str_len > len){ // sanity check
+        printf("Error: Provided input string is too long");
+        exit(3);
+    }
+    if (str_len == 0){ // empty buff
+        return 0; 
+    }
+
     for (int i = 0; i < str_len; i++){
         if (*buff == SPACE){ // if it is a space, it is not the beginning of a word
             wordStart = false;
@@ -95,16 +102,24 @@ int count_words(char *buff, int len, int str_len){
                 wordCount++;
                 wordStart = true;
             } 
-        } // if it is a character and not a new word, just continue as normal
-        buff++; // increment to move forward
+        } // if it is a character and not a new word then continue
+        buff++; 
     }
     return wordCount; 
 }
 
-void reverse_string(char *buff, int len){
+void reverse_string(char *buff, int bufferSize, int len){
     char *start = buff; // pointer to the start of the string
     char *end = buff + len - 1; // pointer to the end of the string
     char temp; // temp var for swapping
+
+    if (len > bufferSize){ // sanity check
+        printf("Error: Provided input string is too long");
+        exit(3);
+    }
+    if (len == 0){ // empty buff
+        return;
+    }
 
     while (end > start){ // iterate until the end char of the string is at the start of the string
         temp = *start; // stores the starting char
@@ -115,11 +130,19 @@ void reverse_string(char *buff, int len){
     }
 }
 
-void word_print(char *buff, int len){
+int word_print(char *buff, int bufferSize, int len){
     int wordCount = 0; // intial wc = 0
     int wordLen = 0; // intial len per word is 0
     bool wordStart = false; // sees if we are currently in a word
-    char *end = buff + len; // points to the position right after the last character we care about
+    char *end = buff + len; // points to the position right after the last char
+
+    if (len > bufferSize){ // sanity check
+        printf("Error: Provided input string is too long");
+        exit(3);
+    }
+    if (len == 0){ //empty buff
+        return 0;
+    }
 
     while (buff < end){ // loop thought every char
         if (wordStart == false){
@@ -148,6 +171,8 @@ void word_print(char *buff, int len){
             printf(" (%d)\n", wordLen);
         }
     }
+
+    return wordCount;
 }
 
 //ADD OTHER HELPER FUNCTIONS HERE FOR OTHER REQUIRED PROGRAM OPTIONS
@@ -202,7 +227,6 @@ int main(int argc, char *argv[]){
         exit(99);
     }
 
-
     user_str_len = setup_buff(buff, input_string, BUFFER_SZ);     //see todos
     if (user_str_len < 0){
         printf("Error setting up buffer, error = %d\n", user_str_len);
@@ -219,7 +243,7 @@ int main(int argc, char *argv[]){
             printf("Word Count: %d\n", rc);
             break;
         case 'r':
-            reverse_string(buff, user_str_len); 
+            reverse_string(buff, BUFFER_SZ, user_str_len); 
             printf("Reversed string: ");
             char *ptr = buff; // pointer to the start of the buffer
             for (int i = 0; i < user_str_len; i++) {
@@ -229,8 +253,10 @@ int main(int argc, char *argv[]){
             printf("\n");
             break;
         case 'w':
+            int numOfWords = 0;
             printf("Word Print\n----------\n");
-            word_print(buff, user_str_len);
+            numOfWords = word_print(buff, BUFFER_SZ, user_str_len);
+            printf("\nNumber of words returned: %d\n", numOfWords);
             break;
         case 'x':
             if (argc != 5) {
@@ -261,7 +287,7 @@ int main(int argc, char *argv[]){
 //          the buff variable will have exactly 50 bytes?
 //  
 //          PLACE YOUR ANSWER HERE
-// Passing the len helps with triple checking and make sure we dont cause a buffer overflow
+// Passing the len helps with triple checking (sanity checks) and making sure we dont cause a buffer overflow
 // Passing in the pointer can reduce seg faults with memory leaks from trying to access memory we do not own
 // Also this helps with resuability as what if we wanted a different buffer size, we are able to reuse this code with minor tweaks
 // This can help with the manipulations of the strings, so we are effiecently able to determine what portion is the actual string and where the periods begin (if they do i.e less than 50 chars)
