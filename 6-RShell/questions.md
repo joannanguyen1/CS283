@@ -1,4 +1,5 @@
 1. How does the remote client determine when a command's output is fully received from the server, and what techniques can be used to handle partial reads or ensure complete message transmission?
+
 The remote client checks for the EOF character 0x04 at the end of the command's output, which is done by a recv() loop that will continue recieving data until it matches the EOF character. To handle partial reads or ensure complete message transmission we can use a fixed buffer size, loop recv() call, or even checking for when recv() equals 0 as the connection has been closed.
 
 2. This week's lecture on TCP explains that it is a reliable stream protocol rather than a message-oriented one. Since TCP does not preserve message boundaries, how should a networked shell protocol define and detect the beginning and end of a command sent over a TCP connection? What challenges arise if this is not handled correctly?
